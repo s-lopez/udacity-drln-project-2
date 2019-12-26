@@ -3,19 +3,19 @@ import random
 import copy
 from collections import namedtuple, deque
 
-from dppg_model import Actor, Critic
+from ddpg_model import Actor, Critic
 
 import torch
 import torch.nn.functional as F
 import torch.optim as optim
 
 BUFFER_SIZE = int(1e6)  # replay buffer size
-BATCH_SIZE = 64         # minibatch size
+BATCH_SIZE = 128        # minibatch size
 GAMMA = 0.99            # discount factor
 TAU = 1e-3              # for soft update of target parameters
 LR_ACTOR = 1e-4         # learning rate of the actor 
-LR_CRITIC = 1e-3        # learning rate of the critic
-WEIGHT_DECAY = 1e-3     # L2 weight decay
+LR_CRITIC = 1e-4        # learning rate of the critic
+WEIGHT_DECAY = 0        # L2 weight decay
 
 
 class Agent():
@@ -105,6 +105,7 @@ class Agent():
         # Minimize the loss
         self.critic_optimizer.zero_grad()
         critic_loss.backward()
+        torch.nn.utils.clip_grad_norm_(self.critic_local.parameters(), 1) # Clip gradient
         self.critic_optimizer.step()
 
         # ---------------------------- update actor ---------------------------- #
@@ -136,7 +137,7 @@ class Agent():
 class OUNoise:
     """Ornstein-Uhlenbeck process."""
 
-    def __init__(self, size, seed, mu=0., theta=0.15, sigma=0.2):
+    def __init__(self, size, seed, mu=0., theta=0.05, sigma=0.02):
         """Initialize parameters and noise process."""
         self.mu = mu * np.ones(size)
         self.theta = theta
